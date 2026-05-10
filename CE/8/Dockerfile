@@ -8,7 +8,7 @@ FROM debian:bookworm-slim
 ARG GRAAL_VERSION=21.2.0
 ARG JAVA_VERSION=8
 
-MAINTAINER Tommaso Benatti, <tommaso.benatti@outlook.com>
+LABEL maintainer="Tommaso Benatti <tommaso.benatti@outlook.com>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -29,7 +29,6 @@ RUN apt-get update -y \
       locales \
       openssl \
       procps \
-      software-properties-common \
       sqlite3 \
       tar \
       tzdata \

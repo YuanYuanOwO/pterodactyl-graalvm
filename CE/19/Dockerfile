@@ -9,7 +9,7 @@
   ARG GRAAL_VERSION=22.3.1
   ARG JAVA_VERSION=19
   
-  MAINTAINER Tommaso Benatti, <tommaso.benatti@outlook.com>
+  LABEL maintainer="Tommaso Benatti <tommaso.benatti@outlook.com>"
   
   ENV DEBIAN_FRONTEND=noninteractive
   
@@ -30,7 +30,6 @@
         locales \
         openssl \
         procps \
-        software-properties-common \
         sqlite3 \
         tar \
         tzdata \

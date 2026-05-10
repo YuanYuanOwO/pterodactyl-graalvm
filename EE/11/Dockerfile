@@ -3,13 +3,13 @@
 # Environment: Java
 # Minimum Panel Version: 1.7.0
 # ----------------------------------
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ARG TARGETPLATFORM
 ARG GRAAL_VERSION=22.3.3
 ARG JAVA_VERSION=11
 
-MAINTAINER RikoDEV, <kontakt@riko.dev>
+LABEL maintainer="Tommaso Benatti <tommaso.benatti@outlook.com>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -30,7 +30,6 @@ RUN apt-get update -y \
       locales \
       openssl \
       procps \
-      software-properties-common \
       sqlite3 \
       tar \
       tzdata \
