@@ -1,1 +1,1 @@
-FROM ghcr.io/tommasobenatti/pterodactyl-graalvm:JDK-21
+FROM ghcr.io/tommasobenatti/pterodactyl-graalvm:JDK-25
