@@ -5,7 +5,7 @@
 
 Java runtime images for Pterodactyl. All published tags target `linux/amd64` and `linux/arm64`, except legacy `CE-8`, whose upstream release is available only for `linux/amd64`.
 
-All images include the runtime tools required by the Leaf and Velocity boot updaters: `bash`, `curl`, `jq`, `sed`, and `sha256sum`. Containers run as the unprivileged `container` user in `/home/container`.
+All images explicitly install the runtime tools required by the Leaf, Velocity and Canvas boot updaters: `bash`, `curl`, `jq`, `sed`, `sha256sum` (from `coreutils`), and `unzip`. Installing a package in the egg's Alpine installation container does not add it to the Debian runtime image. Containers run as the unprivileged `container` user in `/home/container`.
 
 ## Amazon Corretto tags
 
@@ -52,6 +52,10 @@ There is no `JDK-19` build in this repository.
 
 Community Edition images are available as `CE-8`, `CE-11`, `CE-17`, and `CE-19` through `CE-25`.
 
+Every CE archive is verified against its official SHA-256 checksum. `CE-25` now uses [GraalVM 25.4.4.1.1](https://github.com/graalvm/graalvm-ce-builds/releases/tag/graal-25.4.4.1.1), including Java 25.0.4.1.1; legacy `CE-8` uses its last published Java 8 archive (GraalVM 21.3.1). The other CE release pins were checked against the upstream release catalog and already identify their newest Java-major-compatible archives.
+
+`EE/11` and `EE/17` are legacy source directories, excluded from the publishing workflow and from the eggs. Their dependency lists have also been refreshed; the public supported Oracle runtime tags are `JDK-*`.
+
 ## Building locally
 
 Build a Corretto image for one platform:
@@ -59,11 +63,16 @@ Build a Corretto image for one platform:
 ```bash
 docker buildx build \
   --platform linux/amd64 \
-  --build-arg JAVA_VERSION=25 \
-  --file CORRETTO/Dockerfile \
+  --file CORRETTO/25/Dockerfile \
   --tag pterodactyl-corretto:25 \
   --load \
   .
 ```
 
-The GitHub Actions workflow publishes every configured GraalVM and Corretto tag for both supported architectures on pushes to `master`.
+The GitHub Actions workflow refreshes every configured GraalVM and Corretto tag on pushes to `master`, or through its manual Run workflow action. Builds pull current base images and bypass Docker's build cache so "latest" Java archives are actually downloaded again. Oracle JDK and Corretto images already use their official latest-release URLs; no new major version is substituted for a tag.
+
+Each build first publishes a commit-specific candidate tag. The workflow runs Java, checks the updater tools, tests a JAR archive and exercises the Pterodactyl entrypoint on every supported architecture before promoting the candidate to its normal tag. A failed check leaves the normal tag unchanged. Pull requests test the local amd64 image without publishing. Docker is not installed on the local development host; the actual Linux container checks run in GitHub Actions.
+
+Run `python3 scripts/test-yolks.py` to check all 33 source Dockerfiles, generated Corretto files, and CI refresh/check gates. The regression check initially failed on missing runtime dependencies and passes after the refresh. To use a refreshed image on an existing Pterodactyl server, stop and start it after publication so Wings pulls the new tag. If the egg installation never produced a JAR, correct its settings and reinstall it as well (`MINECRAFT_VERSION=26.3`, `INCLUDE_EXPERIMENTAL=1` for Canvas alpha).
+
+Run `node scripts/generate-corretto-dockerfiles.mjs` after changing `CORRETTO/Dockerfile.template` to regenerate every version-specific Dockerfile.

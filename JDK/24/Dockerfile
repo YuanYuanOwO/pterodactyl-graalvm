@@ -18,7 +18,7 @@
   COPY scripts/install-oracle-graalvm.sh /usr/local/bin/install-oracle-graalvm
 
   RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends bash coreutils sed unzip \
         apt-transport-https \
         apt-utils \
         ca-certificates \

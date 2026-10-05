@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends \
+  && apt-get install -y --no-install-recommends bash coreutils sed unzip \
       apt-transport-https \
       apt-utils \
       ca-certificates \

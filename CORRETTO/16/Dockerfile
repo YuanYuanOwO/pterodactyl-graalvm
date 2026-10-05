@@ -1,12 +1,12 @@
 # ----------------------------------
 # Pterodactyl Core Dockerfile
-# Environment: Amazon Corretto
+# Environment: Amazon Corretto 16
 # Minimum Panel Version: 1.7.0
 # ----------------------------------
 FROM debian:trixie-slim
 
 ARG TARGETPLATFORM
-ARG JAVA_VERSION=25
+ARG JAVA_VERSION=16
 
 LABEL maintainer="Tommaso Benatti <tommaso.benatti@outlook.com>" \
       org.opencontainers.image.source="https://github.com/tommasobenatti/pterodactyl-graalvm" \
@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=en_US.UTF-8
 
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends sed unzip \
         bash \
         ca-certificates \
         coreutils \
@@ -46,8 +46,8 @@ RUN apt-get update -y \
     && CORRETTO_FILE="amazon-corretto-${JAVA_VERSION}-${ARCH}-linux-jdk.tar.gz" \
     && CORRETTO_URL="https://corretto.aws/downloads/latest/${CORRETTO_FILE}" \
     && CORRETTO_SHA_URL="https://corretto.aws/downloads/latest_sha256/${CORRETTO_FILE}" \
-    && curl --retry 3 --retry-all-errors -Lfso /tmp/corretto.tar.gz "${CORRETTO_URL}" \
-    && curl --retry 3 --retry-all-errors -Lfso /tmp/corretto.sha256 "${CORRETTO_SHA_URL}" \
+    && curl --proto '=https' --proto-redir '=https' --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 -Lfso /tmp/corretto.tar.gz "${CORRETTO_URL}" \
+    && curl --proto '=https' --proto-redir '=https' --retry 3 --retry-all-errors --connect-timeout 15 --max-time 120 -Lfso /tmp/corretto.sha256 "${CORRETTO_SHA_URL}" \
     && printf '%s  %s\n' "$(tr -d '[:space:]' < /tmp/corretto.sha256)" /tmp/corretto.tar.gz | sha256sum -c - \
     && mkdir -p /opt/java/corretto \
     && tar -xzf /tmp/corretto.tar.gz -C /opt/java/corretto --strip-components=1 \

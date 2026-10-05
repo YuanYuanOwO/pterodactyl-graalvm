@@ -1,6 +1,7 @@
 name: build java yolks
 
 on:
+  workflow_dispatch:
   push:
     branches: ["master"]
   pull_request:
@@ -11,7 +12,15 @@ permissions:
   packages: write
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/test-yolks.py
+      - run: bash -n entrypoint.sh scripts/install-oracle-graalvm.sh scripts/smoke-test-image.sh
+
   graalvm:
+    needs: validate
     name: "pterodactyl-graalvm:${{ matrix.tag }}"
     runs-on: ubuntu-latest
     strategy:
@@ -79,19 +88,36 @@ jobs:
           images: ghcr.io/tommasobenatti/pterodactyl-graalvm
           tags: type=raw,value=${{ matrix.tag }}
 
-      - name: Build and push
+      - name: Build candidate
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./${{ matrix.path }}/Dockerfile
-          platforms: ${{ matrix.platforms || 'linux/amd64,linux/arm64' }}
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || matrix.platforms || 'linux/amd64,linux/arm64' }}
+          load: ${{ github.event_name == 'pull_request' }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}-candidate-${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+          pull: true
+          no-cache: true
           cache-from: type=gha,scope=graalvm-${{ matrix.tag }}
           cache-to: type=gha,mode=max,scope=graalvm-${{ matrix.tag }}
 
+      - name: Check Java, updater tools and startup on every architecture
+        run: bash scripts/smoke-test-image.sh "$IMAGE" "$PLATFORMS"
+        env:
+          IMAGE: ${{ steps.meta.outputs.tags }}-candidate-${{ github.sha }}
+          PLATFORMS: ${{ github.event_name == 'pull_request' && 'linux/amd64' || matrix.platforms || 'linux/amd64,linux/arm64' }}
+
+      - name: Publish verified tag
+        if: github.event_name != 'pull_request'
+        run: docker buildx imagetools create --tag "$IMAGE" "$CANDIDATE"
+        env:
+          IMAGE: ${{ steps.meta.outputs.tags }}
+          CANDIDATE: ${{ steps.meta.outputs.tags }}-candidate-${{ github.sha }}
+
   corretto:
+    needs: validate
     name: "pterodactyl-graalvm:CORRETTO-${{ matrix.version }}"
     runs-on: ubuntu-latest
     strategy:
@@ -124,15 +150,30 @@ jobs:
           images: ghcr.io/tommasobenatti/pterodactyl-graalvm
           tags: type=raw,value=CORRETTO-${{ matrix.version }}
 
-      - name: Build and push
+      - name: Build candidate
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./CORRETTO/Dockerfile
-          build-args: JAVA_VERSION=${{ matrix.version }}
-          platforms: linux/amd64,linux/arm64
+          file: ./CORRETTO/${{ matrix.version }}/Dockerfile
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          load: ${{ github.event_name == 'pull_request' }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}-candidate-${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+          pull: true
+          no-cache: true
           cache-from: type=gha,scope=corretto-${{ matrix.version }}
           cache-to: type=gha,mode=max,scope=corretto-${{ matrix.version }}
+
+      - name: Check Java, updater tools and startup on every architecture
+        run: bash scripts/smoke-test-image.sh "$IMAGE" "$PLATFORMS"
+        env:
+          IMAGE: ${{ steps.meta.outputs.tags }}-candidate-${{ github.sha }}
+          PLATFORMS: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+
+      - name: Publish verified tag
+        if: github.event_name != 'pull_request'
+        run: docker buildx imagetools create --tag "$IMAGE" "$CANDIDATE"
+        env:
+          IMAGE: ${{ steps.meta.outputs.tags }}
+          CANDIDATE: ${{ steps.meta.outputs.tags }}-candidate-${{ github.sha }}

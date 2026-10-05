@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=en_US.UTF-8
 
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends coreutils sed unzip \
         bash \
         ca-certificates \
         curl \

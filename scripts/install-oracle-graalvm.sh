@@ -12,8 +12,8 @@ esac
 ARCHIVE="graalvm-jdk-${JAVA_VERSION}_linux-${ARCH}_bin.tar.gz"
 URL="https://download.oracle.com/graalvm/${JAVA_VERSION}/latest/${ARCHIVE}"
 
-curl --retry 3 --retry-all-errors -Lfso /tmp/graalvm.tar.gz "${URL}"
-curl --retry 3 --retry-all-errors -Lfso /tmp/graalvm.sha256 "${URL}.sha256"
+curl --proto '=https' --proto-redir '=https' --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 -Lfso /tmp/graalvm.tar.gz "${URL}"
+curl --proto '=https' --proto-redir '=https' --retry 3 --retry-all-errors --connect-timeout 15 --max-time 120 -Lfso /tmp/graalvm.sha256 "${URL}.sha256"
 
 EXPECTED_SHA=$(awk '{print $1}' /tmp/graalvm.sha256)
 if [[ ! ${EXPECTED_SHA} =~ ^[0-9a-fA-F]{64}$ ]]; then
