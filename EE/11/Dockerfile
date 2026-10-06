@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends \
+  && apt-get install -y --no-install-recommends bash coreutils sed unzip \
       apt-transport-https \
       apt-utils \
       ca-certificates \
@@ -26,6 +26,7 @@ RUN apt-get update -y \
       git \
       gnupg2 \
       iproute2 \
+      jq \
       java-common \
       locales \
       openssl \
@@ -62,6 +63,6 @@ ENV         USER=container HOME=/home/container
 
 WORKDIR     /home/container
 
-COPY        ./../entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 
 CMD         ["/bin/bash", "/entrypoint.sh"]
